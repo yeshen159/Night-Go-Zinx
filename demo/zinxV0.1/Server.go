@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+/*
+	基于Zinx框架来开发的 服务器端应用程序
+*/
+
 func main() {
 	fmt.Println("vim-go")
 

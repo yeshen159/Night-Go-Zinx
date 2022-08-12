@@ -1,11 +1,10 @@
 package zserver
 
 import (
-	//"Night-Go-Zinx/zinx/ziserver"
 	"Night/zinx/ziserver"
+	"errors"
 	"fmt"
 	"net"
-	//"Night-Go-Zinx/zinx/ziserver"
 )
 
 //server.go的接口实现,定义一个Server的服务器模块
@@ -14,6 +13,33 @@ type Server struct {
 	IPVersion string //服务器绑定的ip版本
 	Ip        string //服务器监听的ip
 	Port      int    //服务器监听的端口
+}
+
+//定义当前客户端链接的所绑定handle api(目前这个handle是写死的，以后优化应该由用户自定义handle方法)
+func CallBackToClient(conn *net.TCPConn, date []byte, cnt int) error {
+	//回显业务
+	fmt.Println("[Conn Handle] CallBackToClient...")
+
+	if _, err := conn.Write(date[:cnt]); err != nil {
+
+		fmt.Println("write back buf err", err)
+
+		return errors.New("CallBackToClient error")
+	}
+
+	return nil
+}
+
+//初始化Server模块的方法
+func NewServer(name string) ziserver.IServer {
+	s := &Server{
+		Name:      name,
+		IPVersion: "tcp4",
+		Ip:        "0.0.0.0",
+		Port:      8999,
+	}
+
+	return s
 }
 
 //启动服务器
@@ -35,6 +61,9 @@ func (s *Server) Start() {
 		}
 
 		fmt.Println("start Zinx server succ,", s.Name, "succ,Listenning...")
+
+		var cid uint32
+		cid = 0
 		//3 阻塞的等待客户端连接,处理客户端链接业务(读写)
 		for {
 			//如果有客户端链接过来,阻塞会返回
@@ -43,24 +72,34 @@ func (s *Server) Start() {
 				fmt.Println("Accpet err", err)
 			}
 
-			//已经与客户端建立链接,做一些业务
-			go func() {
-				for {
-					buf := make([]byte, 512)
-					cnt, err := conn.Read(buf)
-					if err != nil {
-						fmt.Println("recv buf err", err)
-						continue
-					}
+			//将处理新链接的业务方法 和 conn 进行板顶 得到我们的链接模块
+			dealConn := NewConnection(conn, cid, CallBackToClient)
 
-					//回显功能
-					if _, err := conn.Write(buf[:cnt]); err != nil {
-						fmt.Println("write back buf err", err)
-						continue
-					}
-					fmt.Println(buf[:cnt])
-				}
-			}()
+			cid++
+
+			//启动当前的链接业务处理
+
+			go dealConn.Start()
+			//已经与客户端建立链接,做一些业务
+			//go func() {
+			//	for {
+			//		buf := make([]byte, 512)
+			//		cnt, err := conn.Read(buf)
+			//		if err != nil {
+			//			fmt.Println("recv buf err", err)
+			//			continue
+			//		}
+
+			//		fmt.Printf("recv client buf %s, cnt %d\n", buf, cnt)
+
+			//		//回显功能
+			//		if _, err := conn.Write(buf[:cnt]); err != nil {
+			//			fmt.Println("write back buf err", err)
+			//			continue
+			//		}
+			//		fmt.Println(buf[:cnt])
+			//	}
+			//}()
 		}
 	}()
 }
@@ -76,16 +115,4 @@ func (s *Server) Serve() {
 	s.Start()
 
 	select {}
-}
-
-//初始化Server模块的方法
-func NewServer(name string) ziserver.IServer {
-	s := &Server{
-		Name:      name,
-		IPVersion: "tcp4",
-		Ip:        "0.0.0.0",
-		Port:      8999,
-	}
-
-	return s
 }
