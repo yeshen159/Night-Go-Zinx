@@ -1,6 +1,7 @@
 package zserver
 
 import (
+	"Night/zinx/utils"
 	"Night/zinx/ziserver"
 	"fmt"
 	"net"
@@ -33,10 +34,10 @@ type Server struct {
 //初始化Server模块的方法
 func NewServer(name string) ziserver.IServer {
 	s := &Server{
-		Name:      name,
+		Name:      utils.GlobalObject.Name,
 		IPVersion: "tcp4",
-		Ip:        "0.0.0.0",
-		Port:      8999,
+		Ip:        utils.GlobalObject.Host,
+		Port:      utils.GlobalObject.TcpPort,
 		Router:    nil,
 	}
 
@@ -51,7 +52,11 @@ func (s *Server) AddRouter(router ziserver.IRouter) {
 
 //启动服务器
 func (s *Server) Start() {
-	fmt.Printf("[start] Server Listenner at IP: %s, Port %d, is starting\n", s.Ip, s.Port)
+	fmt.Printf("[Zinx] Server Name %s Listenner at IP: %s, Port: %d, is starting...\n",
+		utils.GlobalObject.Name, utils.GlobalObject.Host, utils.GlobalObject.TcpPort)
+	fmt.Printf("[Zinx] Version: %s, MaxConn: %d, MaxPackageSize: %d\n",
+		utils.GlobalObject.Version, utils.GlobalObject.MaxConn, utils.GlobalObject.MaxPackageSize)
+	//fmt.Printf("[start] Server Listenner at IP: %s, Port %d, is starting\n", s.Ip, s.Port)
 
 	go func() {
 		//1 获取一个TCP的addr

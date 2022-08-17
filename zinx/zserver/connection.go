@@ -1,6 +1,7 @@
 package zserver
 
 import (
+	"Night/zinx/utils"
 	"Night/zinx/ziserver"
 	"fmt"
 	"net"
@@ -46,8 +47,8 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		//读取客户端的数据到buf中,目前最大512字节
-		buf := make([]byte, 512)
+		//读取客户端的数据到buf中
+		buf := make([]byte, utils.GlobalObject.MaxPackageSize)
 		_, err := c.Conn.Read(buf)
 		if err != nil {
 			fmt.Println("recv buf err", err)
