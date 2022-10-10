@@ -9,11 +9,13 @@ import (
 
 //server.go的接口实现,定义一个Server的服务器模块
 type Server struct {
-	Name      string           //服务器的名称
-	IPVersion string           //服务器绑定的ip版本
-	Ip        string           //服务器监听的ip
-	Port      int              //服务器监听的端口
-	Router    ziserver.IRouter //当前的Server添加一个router，server注册的链接对应的处理业务
+	Name       string              //服务器的名称
+	IPVersion  string              //服务器绑定的ip版本
+	Ip         string              //服务器监听的ip
+	Port       int                 //服务器监听的端口
+	MsgHandler ziserver.IMsgHandle //当前server的消息管理模块, 用来绑定MsgID和对应的处理业务API关系
+	//Router    ziserver.IRouter //当前的Server添加一个router，server注册的链接对应的处理业务
+
 }
 
 //定义当前客户端链接的所绑定handle api(目前这个handle是写死的，以后优化应该由用户自定义handle方法)
@@ -34,19 +36,22 @@ type Server struct {
 //初始化Server模块的方法
 func NewServer(name string) ziserver.IServer {
 	s := &Server{
-		Name:      utils.GlobalObject.Name,
-		IPVersion: "tcp4",
-		Ip:        utils.GlobalObject.Host,
-		Port:      utils.GlobalObject.TcpPort,
-		Router:    nil,
+		Name:       utils.GlobalObject.Name,
+		IPVersion:  "tcp4",
+		Ip:         utils.GlobalObject.Host,
+		Port:       utils.GlobalObject.TcpPort,
+		MsgHandler: NewMsgHandle(),
+		//Router:    nil,
 	}
 
 	return s
 }
 
 //路由功能: 给当前的服务注册一个路由方法，供客户端的链接处理使用
-func (s *Server) AddRouter(router ziserver.IRouter) {
-	s.Router = router
+func (s *Server) AddRouter(msgID uint32, router ziserver.IRouter) {
+	//s.Router = router
+
+	s.MsgHandler.AddRouter(msgID, router)
 	fmt.Println("Add Router Success!!")
 }
 
@@ -86,6 +91,7 @@ func (s *Server) Start() {
 
 			//将处理新链接的业务方法 和 conn 进行板顶 得到我们的链接模块
 			dealConn := NewConnection(conn, cid, s.Router)
+			//dealConn := NewConnection(conn, cid, s.)
 
 			cid++
 

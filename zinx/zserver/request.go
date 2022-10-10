@@ -7,7 +7,7 @@ type Request struct {
 	conn ziserver.IConnection
 
 	//客户端请求的
-	data []byte
+	msg ziserver.IMessage
 }
 
 //得到当前链接
@@ -19,5 +19,10 @@ func (r *Request) GetConnection() ziserver.IConnection {
 //得到请求的消息数据
 func (r *Request) GetData() []byte {
 
-	return r.data
+	return r.msg.GetData()
+}
+
+func (r *Request) GetMsgID() uint32 {
+
+	return r.msg.GetMsgId()
 }
