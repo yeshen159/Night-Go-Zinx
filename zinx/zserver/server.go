@@ -9,13 +9,18 @@ import (
 
 //server.go的接口实现,定义一个Server的服务器模块
 type Server struct {
-	Name       string              //服务器的名称
-	IPVersion  string              //服务器绑定的ip版本
-	Ip         string              //服务器监听的ip
-	Port       int                 //服务器监听的端口
-	MsgHandler ziserver.IMsgHandle //当前server的消息管理模块, 用来绑定MsgID和对应的处理业务API关系
-	//Router    ziserver.IRouter //当前的Server添加一个router，server注册的链接对应的处理业务
+	Name       string                //服务器的名称
+	IPVersion  string                //服务器绑定的ip版本
+	Ip         string                //服务器监听的ip
+	Port       int                   //服务器监听的端口
+	MsgHandler ziserver.IMsgHandle   //当前server的消息管理模块, 用来绑定MsgID和对应的处理业务API关系
+	ConnMgr    ziserver.IConnManager //当前server的链接管理器
+	//Router    ziserver.IRouter   //当前的Server添加一个router，server注册的链接对应的处理业务
 
+	//该Server创建链接之后自动调用Hook函数--OnConnStart
+	OnConnStart func(conn ziserver.IConnection)
+	//该Server创建链接之后自动调用Hook函数--OnConnStop
+	OnConnStop func(conn ziserver.IConnection)
 }
 
 //定义当前客户端链接的所绑定handle api(目前这个handle是写死的，以后优化应该由用户自定义handle方法)
@@ -41,6 +46,7 @@ func NewServer(name string) ziserver.IServer {
 		Ip:         utils.GlobalObject.Host,
 		Port:       utils.GlobalObject.TcpPort,
 		MsgHandler: NewMsgHandle(),
+		ConnMgr:    NewConnManager(),
 		//Router:    nil,
 	}
 
@@ -55,6 +61,10 @@ func (s *Server) AddRouter(msgID uint32, router ziserver.IRouter) {
 	fmt.Println("Add Router Success!!")
 }
 
+func (s *Server) GetConnMgr() ziserver.IConnManager {
+	return s.ConnMgr
+}
+
 //启动服务器
 func (s *Server) Start() {
 	fmt.Printf("[Zinx] Server Name %s Listenner at IP: %s, Port: %d, is starting...\n",
@@ -64,6 +74,9 @@ func (s *Server) Start() {
 	//fmt.Printf("[start] Server Listenner at IP: %s, Port %d, is starting\n", s.Ip, s.Port)
 
 	go func() {
+		//0 开启消息队列及Worker工作池
+		s.MsgHandler.StartWorkerPool()
+
 		//1 获取一个TCP的addr
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.Ip, s.Port))
 		if err != nil {
@@ -81,16 +94,26 @@ func (s *Server) Start() {
 
 		var cid uint32
 		cid = 0
+
 		//3 阻塞的等待客户端连接,处理客户端链接业务(读写)
 		for {
 			//如果有客户端链接过来,阻塞会返回
 			conn, err := listenner.AcceptTCP()
 			if err != nil {
 				fmt.Println("Accpet err", err)
+				continue
 			}
 
-			//将处理新链接的业务方法 和 conn 进行板顶 得到我们的链接模块
-			dealConn := NewConnection(conn, cid, s.Router)
+			//设置最大链接个数的判断, 如果超过最大链接数量, 那么关闭此新的链接
+			if s.ConnMgr.Len() >= utils.GlobalObject.MaxConn {
+				//TODO 给客户端响应一个超出最大链接的错误包
+				fmt.Println("---------------->Too Many Connections MaxConn = ", utils.GlobalObject.MaxConn)
+				conn.Close()
+				continue
+			}
+
+			//将处理新链接的业务方法 和 conn 进行绑定 得到我们的链接模块
+			dealConn := NewConnection(s, conn, cid, s.MsgHandler)
 			//dealConn := NewConnection(conn, cid, s.)
 
 			cid++
@@ -124,7 +147,9 @@ func (s *Server) Start() {
 
 //停止服务器
 func (s *Server) Stop() {
-
+	//将一些服务器的资源.状态或者一些已经开辟的链接信息 进行停止或者回收
+	fmt.Println("[STOP] Zinx server name", s.Name)
+	s.ConnMgr.ClearConn()
 }
 
 //运行服务器
@@ -133,4 +158,31 @@ func (s *Server) Serve() {
 	s.Start()
 
 	select {}
+}
+
+//注册OnConnStart 钩子函数的方法
+func (s *Server) SetOnConnStart(hookFunc func(connection ziserver.IConnection)) {
+	s.OnConnStart = hookFunc
+}
+
+//注册OnConnStop 钩子函数的方法
+func (s *Server) SetOnConnStop(hookFunc func(connection ziserver.IConnection)) {
+	s.OnConnStop = hookFunc
+}
+
+//调用OnConnStart 钩子函数的方法
+func (s *Server) CallOnConnStart(conn ziserver.IConnection) {
+	if s.OnConnStart != nil {
+		fmt.Println("-->call OnConnStart()...")
+		s.OnConnStart(conn)
+	}
+}
+
+//调用OnConnStop 钩子函数的方法
+func (s *Server) CallOnConnStop(conn ziserver.IConnection) {
+	if s.OnConnStop != nil {
+		fmt.Println("-->call OnConnStop()...")
+		s.OnConnStop(conn)
+	}
+
 }
