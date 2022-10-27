@@ -50,14 +50,29 @@ func (this *HelloZinxRouter) Handle(request ziserver.IRequest) {
 //创建链接之后执行钩子函数
 func DoConnectionBegin(conn ziserver.IConnection) {
 	fmt.Println("------------> DoConnectionBegin is Called ...")
+	//s.SetOnConnStart(DoConnectionId)
 	if err := conn.SendMsg(202, []byte("DoConnection Begin")); err != nil {
 		fmt.Println(err)
 	}
 
+	DoConnectionId(conn)
 	//给链接创建设置一些属性
 	fmt.Println("Set conn Name, Hoe ....")
 	conn.SetProperty("Name", "Night")
 	conn.SetProperty("GitHub", "https://www.night.com")
+}
+
+//创建链接之后执行钩子函数
+func DoConnectionId(conn ziserver.IConnection) {
+	fmt.Println("------------> DoConnectionId is Called .........................................")
+	//if err := conn.SendMsg(202, []byte("DoConnection Begin")); err != nil {
+	//	fmt.Println(err)
+	//}
+
+	////给链接创建设置一些属性
+	//fmt.Println("Set conn Name, Hoe ....")
+	//conn.SetProperty("Name", "Night")
+	//conn.SetProperty("GitHub", "https://www.night.com")
 }
 
 //链接断开之前执行的函数
@@ -75,6 +90,7 @@ func main() {
 
 	//2 注册链接Hook钩子函数
 	s.SetOnConnStart(DoConnectionBegin)
+	//s.SetOnConnStart(DoConnectionId)
 	s.SetOnConnStop(DoConnectionLast)
 
 	//3 给当前zinx框架添加一个自定义的router
