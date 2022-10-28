@@ -1,8 +1,11 @@
 package zserver
 
 import (
-	"Night/zinx/utils"
-	"Night/zinx/ziserver"
+	"github.com/yeshen159/Night-Go-Zinx/zinx/utils"
+	"github.com/yeshen159/Night-Go-Zinx/zinx/ziserver"
+
+	//"Night/zinx/utils"
+	//"Night/zinx/ziserver"
 	"bytes"
 	"encoding/binary"
 	"errors"

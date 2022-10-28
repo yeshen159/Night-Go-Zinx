@@ -1,9 +1,11 @@
 package utils
 
 import (
-	"Night/zinx/ziserver"
+	//"Night/zinx/ziserver"
 	"encoding/json"
 	"io/ioutil"
+
+	"github.com/yeshen159/Night-Go-Zinx/zinx/ziserver"
 )
 
 /*

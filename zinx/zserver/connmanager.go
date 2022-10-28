@@ -1,10 +1,12 @@
 package zserver
 
 import (
-	"Night/zinx/ziserver"
+	//"Night/zinx/ziserver"
 	"errors"
 	"fmt"
 	"sync"
+
+	"github.com/yeshen159/Night-Go-Zinx/zinx/ziserver"
 )
 
 /*

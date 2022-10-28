@@ -1,4 +1,4 @@
-module Night
+module github.com/yeshen159/Night-Go-Zinx
 
 go 1.18
 

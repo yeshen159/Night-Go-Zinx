@@ -1,10 +1,13 @@
 package zserver
 
 import (
-	"Night/zinx/utils"
-	"Night/zinx/ziserver"
+	//"Night/zinx/utils"
+	//"Night/zinx/ziserver"
 	"fmt"
 	"net"
+
+	"github.com/yeshen159/Night-Go-Zinx/zinx/utils"
+	"github.com/yeshen159/Night-Go-Zinx/zinx/ziserver"
 )
 
 //server.go的接口实现,定义一个Server的服务器模块

@@ -1,6 +1,7 @@
 package zserver
 
-import "Night/zinx/ziserver"
+//import "Night/zinx/ziserver"
+import "github.com/yeshen159/Night-Go-Zinx/zinx/ziserver"
 
 type Request struct {
 	//已经和客户端建立好的链接
